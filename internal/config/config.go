@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"errors"
 	"os"
 )
 
@@ -10,13 +10,13 @@ type Config struct {
 }
 
 // LoadConfig загружает конфигурацию из переменных окружения или других источников
-func LoadConfig() *Config {
+func LoadConfig() (*Config, error) {
 	token := os.Getenv("TELEGRAM_BOT_TOKEN")
 	if token == "" {
-		log.Fatal("TELEGRAM_BOT_TOKEN is not set")
+		return nil, errors.New("TELEGRAM_BOT_TOKEN is not set")
 	}
 
 	return &Config{
 		TelegramToken: token,
-	}
+	}, nil
 }
