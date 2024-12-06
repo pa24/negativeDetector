@@ -34,7 +34,9 @@ func StartBot(cfg *config.Config) error {
 				isNegative := wordFilter(update.Message)
 
 				if isNegative {
-					deleteMessage(bot, update.Message)
+					if err := deleteMessage(bot, update.Message); err != nil {
+						log.Printf("Failed to delete message with id = %d in media group: %v", update.Message.MessageID, err)
+					}
 					deletedID[update.Message.MessageID] = true
 					if update.Message.MediaGroupID != "" {
 						mediaGroupCache[update.Message.MediaGroupID] = true
@@ -57,7 +59,9 @@ func StartBot(cfg *config.Config) error {
 
 func deleteMediaGroup(bot *tgbotapi.BotAPI, message *tgbotapi.Message, mediaGroupCache map[string]bool) {
 	if mediaGroupCache[message.MediaGroupID] {
-		deleteMessage(bot, message)
+		if err := deleteMessage(bot, message); err != nil {
+			log.Printf("Failed to delete message with id = %d in media group: %v", message.MessageID, err) // Логируем ошибку
+		}
 	}
 }
 
