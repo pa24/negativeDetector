@@ -84,19 +84,8 @@ func prepareNotification(bot *tgbotapi.BotAPI, message *tgbotapi.Message, notifi
 }
 
 func wordFilter(message *tgbotapi.Message) bool {
-	var text string
-	if message.Caption != "" {
-		text = message.Caption
-	} else {
-		text = message.Text
-	}
-
-	// Если есть запрещённые слова, удаляем сообщение
-	var negativeWord bool
-	// Проверяем или обновляем статус групп
-	negativeWord = containsBannedWord(text)
-
-	return negativeWord
+	text := getMessageText(message)
+	return containsBannedWord(text)
 }
 
 func containsBannedWord(text string) bool {
@@ -110,4 +99,11 @@ func containsBannedWord(text string) bool {
 		}
 	}
 	return false
+}
+
+func getMessageText(message *tgbotapi.Message) string {
+	if message.Caption != "" {
+		return message.Caption
+	}
+	return message.Text
 }
