@@ -8,10 +8,13 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-var bannedWords = []string{"упал", "реклама", "кроватки", "разбушевавшейся", "готовить"}
+var bannedWords []string
 
 // StartBot инициализирует и запускает бота
 func StartBot(cfg *config.Config) error {
+	var err error
+	bannedWords, err = config.LoadBannedWords("../internal/config/banned_words.json")
+
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
 	if err != nil {
 		return err
@@ -25,7 +28,7 @@ func StartBot(cfg *config.Config) error {
 	updates := bot.GetUpdatesChan(u)
 
 	mediaGroupCache := make(map[string]bool)
-	notificationSent := make(map[string]bool)
+	//notificationSent := make(map[string]bool)
 	deletedID := make(map[int]bool)
 
 	for update := range updates {
@@ -46,9 +49,7 @@ func StartBot(cfg *config.Config) error {
 					if update.Message.MediaGroupID != "" {
 						mediaGroupCache[update.Message.MediaGroupID] = true
 					}
-				}
-				if isNegative || exist {
-					prepareNotification(bot, update.Message, notificationSent)
+					sendNotification(bot, update.Message)
 				}
 			}
 		}
@@ -70,16 +71,9 @@ func checkForMediaGroup(message *tgbotapi.Message, mediaGroupCache map[string]bo
 }
 
 func prepareNotification(bot *tgbotapi.BotAPI, message *tgbotapi.Message, notificationSent map[string]bool) {
-	if message.MediaGroupID != "" {
-		if !notificationSent[message.MediaGroupID] {
-			sendNotification(bot, message)
-			notificationSent[message.MediaGroupID] = true
-			return
-		}
-	} else {
-		sendNotification(bot, message)
-		return
-	}
+
+	sendNotification(bot, message)
+	return
 }
 
 func wordFilter(message *tgbotapi.Message) bool {
