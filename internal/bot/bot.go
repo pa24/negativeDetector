@@ -29,6 +29,11 @@ func StartBot(cfg *config.Config) error {
 	deletedID := make(map[int]bool)
 
 	for update := range updates {
+		exist := checkForMediaGroup(update.Message, mediaGroupCache, deletedID)
+		if exist {
+			deleteMediaGroup(bot, update.Message, mediaGroupCache)
+			continue
+		}
 		if update.Message != nil {
 			if update.Message.ForwardFrom != nil || update.Message.ForwardFromChat != nil {
 				isNegative := wordFilter(update.Message)
@@ -41,11 +46,6 @@ func StartBot(cfg *config.Config) error {
 					if update.Message.MediaGroupID != "" {
 						mediaGroupCache[update.Message.MediaGroupID] = true
 					}
-				}
-				exist := checkForMediaGroup(update.Message, mediaGroupCache, deletedID)
-				if exist {
-					deleteMediaGroup(bot, update.Message, mediaGroupCache)
-
 				}
 				if isNegative || exist {
 					prepareNotification(bot, update.Message, notificationSent)
@@ -66,12 +66,7 @@ func deleteMediaGroup(bot *tgbotapi.BotAPI, message *tgbotapi.Message, mediaGrou
 }
 
 func checkForMediaGroup(message *tgbotapi.Message, mediaGroupCache map[string]bool, deletedID map[int]bool) bool {
-	if message.MediaGroupID != "" && mediaGroupCache[message.MediaGroupID] {
-		if !deletedID[message.MessageID] {
-			return true
-		}
-	}
-	return false
+	return message.MediaGroupID != "" && mediaGroupCache[message.MediaGroupID] && !deletedID[message.MessageID]
 }
 
 func prepareNotification(bot *tgbotapi.BotAPI, message *tgbotapi.Message, notificationSent map[string]bool) {
@@ -110,4 +105,11 @@ func getMessageText(message *tgbotapi.Message) string {
 		return message.Caption
 	}
 	return message.Text
+}
+
+func isMessageValid(update *tgbotapi.Update) bool {
+	return update.Message.ForwardFrom != nil ||
+		update.Message.ForwardFromChat != nil ||
+		update.Message.Caption != "" ||
+		update.Message.Text != ""
 }
