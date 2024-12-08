@@ -6,7 +6,6 @@ import (
 
 // deleteMessage удаляет текстовые и медиа-сообщения
 func deleteMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) error {
-
 	deleteMsg := tgbotapi.DeleteMessageConfig{
 		ChatID:    message.Chat.ID,
 		MessageID: message.MessageID,
