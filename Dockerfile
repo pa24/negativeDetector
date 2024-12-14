@@ -11,7 +11,7 @@ COPY . .
 RUN go mod tidy
 
 # Сборка приложения
-RUN go build -o main .
+RUN go build -o main ./cmd
 
 # Устанавливаем команду по умолчанию
 CMD ["./main"]
