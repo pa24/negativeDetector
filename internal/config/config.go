@@ -8,7 +8,8 @@ import (
 )
 
 type Config struct {
-	TelegramToken string
+	TelegramToken     string
+	PathToBannedWords string
 }
 
 type WordConfig struct {
@@ -22,8 +23,17 @@ func LoadConfig() (*Config, error) {
 		return nil, errors.New("TELEGRAM_BOT_TOKEN is not set")
 	}
 
+	env := os.Getenv("APP_ENV")
+
+	var path string
+	if env == "production" {
+		path = "internal/config/banned_words.json"
+	} else {
+		path = "../internal/config/banned_words.json"
+	}
 	return &Config{
-		TelegramToken: token,
+		TelegramToken:     token,
+		PathToBannedWords: path,
 	}, nil
 }
 
