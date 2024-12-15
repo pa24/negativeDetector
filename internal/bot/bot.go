@@ -31,9 +31,11 @@ func StartBot(cfg *config.Config) error {
 	mediaGroupCache := make(map[string]bool)
 
 	for update := range updates {
-		if mediaGroupCache[update.Message.MediaGroupID] {
-			deleteMediaGroup(bot, update.Message)
-			continue
+		if update.Message != nil && update.Message.MediaGroupID != "" {
+			if mediaGroupCache[update.Message.MediaGroupID] {
+				deleteMediaGroup(bot, update.Message)
+				continue
+			}
 		}
 		if !isMessageValid(&update) {
 			continue
