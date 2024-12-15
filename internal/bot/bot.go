@@ -13,7 +13,7 @@ var bannedWords []string
 // StartBot инициализирует и запускает бота
 func StartBot(cfg *config.Config) error {
 	var err error
-	bannedWords, err = config.LoadBannedWords("../internal/config/banned_words.json")
+	bannedWords, err = config.LoadBannedWords("internal/config/banned_words.json")
 	if err != nil {
 		return err
 	}
