@@ -42,7 +42,7 @@ func StartBot(cfg *config.Config) error {
 		}
 		if wordFilter(update.Message) {
 			handleNegativeMessage(bot, update.Message)
-			sendNotification(bot, update.Message, mediaGroupCache)
+			sendNotification(bot, update.Message, mediaGroupCache, cfg.TgNegativeChannelInviteLink)
 		}
 	}
 

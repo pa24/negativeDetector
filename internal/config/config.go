@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	TelegramToken     string
-	PathToBannedWords string
+	TelegramToken               string
+	PathToBannedWords           string
+	TgNegativeChannelInviteLink string
 }
 
 type WordConfig struct {
@@ -31,9 +32,13 @@ func LoadConfig() (*Config, error) {
 	} else {
 		path = "../internal/config/banned_words.json"
 	}
+
+	negativeChatInviteLink := os.Getenv("NEGATIVE_CHAT_INVITE_LINK")
+
 	return &Config{
-		TelegramToken:     token,
-		PathToBannedWords: path,
+		TelegramToken:               token,
+		PathToBannedWords:           path,
+		TgNegativeChannelInviteLink: negativeChatInviteLink,
 	}, nil
 }
 
