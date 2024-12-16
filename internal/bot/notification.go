@@ -5,10 +5,14 @@ import (
 	"log"
 )
 
-const textNotification = "Сообщение удалено: обнаружен негатив."
+const textNotification = "Сообщение удалено: обнаружен негатив, посмотреть его можно тут: https://t.me/+M7PJFSDpCKhjMDdi"
 
 // sendNotification отправляет уведомление о том, что сообщение было удалено
-func sendNotification(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
+func sendNotification(bot *tgbotapi.BotAPI, message *tgbotapi.Message, mediaGroupCache map[string]bool) {
+	if message.MediaGroupID != "" {
+		mediaGroupCache[message.MediaGroupID] = true
+	}
+
 	msg := tgbotapi.NewMessage(message.Chat.ID, textNotification)
 	msg.ParseMode = "Markdown"
 	if _, err := bot.Send(msg); err != nil {
