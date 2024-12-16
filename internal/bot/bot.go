@@ -10,6 +10,9 @@ import (
 
 var bannedWords []string
 
+const wolfChatId = -1002471049006
+const negativeChatId = -1002430196148
+
 // StartBot инициализирует и запускает бота
 func StartBot(cfg *config.Config) error {
 	var err error
@@ -31,7 +34,7 @@ func StartBot(cfg *config.Config) error {
 	mediaGroupCache := make(map[string]bool)
 
 	for update := range updates {
-		if update.Message != nil && update.Message.MediaGroupID != "" && update.Message.Chat.ID == -1002471049006 {
+		if update.Message != nil && update.Message.MediaGroupID != "" && update.Message.Chat.ID == wolfChatId {
 			if mediaGroupCache[update.Message.MediaGroupID] {
 				forwardMediaGroup(bot, update.Message)
 				continue
