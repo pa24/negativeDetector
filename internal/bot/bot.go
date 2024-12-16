@@ -10,6 +10,9 @@ import (
 
 var bannedWords []string
 
+const wolfChatId = -1002471049006
+const negativeChatId = -1002430196148
+
 // StartBot инициализирует и запускает бота
 func StartBot(cfg *config.Config) error {
 	var err error
@@ -31,9 +34,9 @@ func StartBot(cfg *config.Config) error {
 	mediaGroupCache := make(map[string]bool)
 
 	for update := range updates {
-		if update.Message != nil && update.Message.MediaGroupID != "" {
+		if update.Message != nil && update.Message.MediaGroupID != "" && update.Message.Chat.ID == wolfChatId {
 			if mediaGroupCache[update.Message.MediaGroupID] {
-				deleteMediaGroup(bot, update.Message)
+				forwardMediaGroup(bot, update.Message)
 				continue
 			}
 		}
@@ -41,27 +44,23 @@ func StartBot(cfg *config.Config) error {
 			continue
 		}
 		if wordFilter(update.Message) {
-			handleNegativeMessage(bot, update.Message, mediaGroupCache)
+			handleNegativeMessage(bot, update.Message)
+			sendNotification(bot, update.Message, mediaGroupCache, cfg.TgNegativeChannelInviteLink)
 		}
 	}
 
 	return nil
 }
 
-func handleNegativeMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, mediaGroupCache map[string]bool) {
-	if err := deleteMessage(bot, message); err != nil {
+func handleNegativeMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
+	if err := forwardMessage(bot, message); err != nil {
 		log.Printf("Failed to delete message with id = %d in media group: %v", message.MessageID, err)
 		return
 	}
-	if message.MediaGroupID != "" {
-		mediaGroupCache[message.MediaGroupID] = true
-	}
-
-	sendNotification(bot, message)
 }
 
-func deleteMediaGroup(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
-	if err := deleteMessage(bot, message); err != nil {
+func forwardMediaGroup(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
+	if err := forwardMessage(bot, message); err != nil {
 		log.Printf("Failed to delete message with id = %d in media group: %v", message.MessageID, err) // Логируем ошибку
 	}
 }
