@@ -34,12 +34,11 @@ func StartBot(cfg *config.Config) error {
 	mediaGroupCache := make(map[string]bool)
 
 	for update := range updates {
-		if update.Message != nil && update.Message.MediaGroupID != "" && update.Message.Chat.ID == wolfChatId {
-			if mediaGroupCache[update.Message.MediaGroupID] {
-				forwardMediaGroup(bot, update.Message)
-				continue
-			}
+		if isMessageGroup(update.Message, mediaGroupCache) {
+			forwardMediaGroup(bot, update.Message)
+			continue
 		}
+
 		if !isMessageValid(&update) {
 			continue
 		}
@@ -52,17 +51,33 @@ func StartBot(cfg *config.Config) error {
 	return nil
 }
 
+func isMessageGroup(message *tgbotapi.Message, mediaGroupCache map[string]bool) bool {
+	if message != nil && message.MediaGroupID != "" && message.Chat.ID == wolfChatId {
+		if mediaGroupCache[message.MediaGroupID] {
+			return true
+		}
+	}
+	return false
+}
+
 func handleNegativeMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	if err := forwardMessage(bot, message); err != nil {
-		log.Printf("Failed to delete message with id = %d in media group: %v", message.MessageID, err)
+		log.Printf("Failed to forward message with id = %d in media group: %v", message.MessageID, err)
 		return
+	}
+	if err := deleteMessage(bot, message); err != nil {
+		log.Printf("Failed to delete message with id = %d in media group: %v", message.MessageID, err) // Логируем ошибку
 	}
 }
 
 func forwardMediaGroup(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	if err := forwardMessage(bot, message); err != nil {
-		log.Printf("Failed to delete message with id = %d in media group: %v", message.MessageID, err) // Логируем ошибку
+		log.Printf("Failed to forward message with id = %d in media group: %v", message.MessageID, err)
 	}
+	if err := deleteMessage(bot, message); err != nil {
+		log.Printf("Failed to delete message with id = %d in media group: %v", message.MessageID, err)
+	}
+
 }
 
 func wordFilter(message *tgbotapi.Message) bool {
