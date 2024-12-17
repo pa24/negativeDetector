@@ -49,7 +49,10 @@ func StartBot(cfg *config.Config) error {
 }
 
 func isMessageGroup(message *tgbotapi.Message, mediaGroupCache map[string]bool, targetChatID int64) bool {
-	if message != nil && message.MediaGroupID != "" && message.Chat.ID == targetChatID {
+	if message == nil { // Проверяем, что Message не nil
+		return false
+	}
+	if message.MediaGroupID != "" && message.Chat.ID == targetChatID {
 		if mediaGroupCache[message.MediaGroupID] {
 			return true
 		}
@@ -89,6 +92,9 @@ func getMessageText(message *tgbotapi.Message) string {
 }
 
 func isMessageValid(update *tgbotapi.Update) bool {
+	if update.Message == nil {
+		return false
+	}
 	return (update.Message.Caption != "" || update.Message.Text != "") &&
 		(update.Message.ForwardFrom != nil || update.Message.ForwardFromChat != nil)
 }
