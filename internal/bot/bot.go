@@ -10,9 +10,6 @@ import (
 
 var bannedWords []string
 
-const wolfChatId = -1002471049006
-const negativeChatId = -1002430196148
-
 // StartBot инициализирует и запускает бота
 func StartBot(cfg *config.Config) error {
 	var err error
@@ -25,6 +22,9 @@ func StartBot(cfg *config.Config) error {
 		return err
 	}
 
+	targetChatID := int64(cfg.TargetChatID)
+	forwardChatID := int64(cfg.ForwardChatID)
+
 	bot.Debug = false
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
@@ -34,8 +34,8 @@ func StartBot(cfg *config.Config) error {
 	mediaGroupCache := make(map[string]bool)
 
 	for update := range updates {
-		if isMessageGroup(update.Message, mediaGroupCache) {
-			forwardMediaGroup(bot, update.Message)
+		if isMessageGroup(update.Message, mediaGroupCache, targetChatID) {
+			forwardMediaGroup(bot, update.Message, forwardChatID)
 			continue
 		}
 
@@ -43,7 +43,7 @@ func StartBot(cfg *config.Config) error {
 			continue
 		}
 		if wordFilter(update.Message) {
-			handleNegativeMessage(bot, update.Message)
+			handleNegativeMessage(bot, update.Message, forwardChatID)
 			sendNotification(bot, update.Message, mediaGroupCache, cfg.TgNegativeChannelInviteLink)
 		}
 	}
@@ -51,8 +51,8 @@ func StartBot(cfg *config.Config) error {
 	return nil
 }
 
-func isMessageGroup(message *tgbotapi.Message, mediaGroupCache map[string]bool) bool {
-	if message != nil && message.MediaGroupID != "" && message.Chat.ID == wolfChatId {
+func isMessageGroup(message *tgbotapi.Message, mediaGroupCache map[string]bool, targetChatID int64) bool {
+	if message != nil && message.MediaGroupID != "" && message.Chat.ID == targetChatID {
 		if mediaGroupCache[message.MediaGroupID] {
 			return true
 		}
@@ -60,8 +60,8 @@ func isMessageGroup(message *tgbotapi.Message, mediaGroupCache map[string]bool) 
 	return false
 }
 
-func handleNegativeMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
-	if err := forwardMessage(bot, message); err != nil {
+func handleNegativeMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, forwardChatID int64) {
+	if err := forwardMessage(bot, message, forwardChatID); err != nil {
 		log.Printf("Failed to forward message with id = %d in media group: %v", message.MessageID, err)
 		return
 	}
@@ -70,8 +70,8 @@ func handleNegativeMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	}
 }
 
-func forwardMediaGroup(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
-	if err := forwardMessage(bot, message); err != nil {
+func forwardMediaGroup(bot *tgbotapi.BotAPI, message *tgbotapi.Message, forwardChatID int64) {
+	if err := forwardMessage(bot, message, forwardChatID); err != nil {
 		log.Printf("Failed to forward message with id = %d in media group: %v", message.MessageID, err)
 	}
 	if err := deleteMessage(bot, message); err != nil {

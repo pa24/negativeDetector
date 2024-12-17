@@ -5,12 +5,15 @@ import (
 	"errors"
 	"log"
 	"os"
+	"strconv"
 )
 
 type Config struct {
 	TelegramToken               string
 	PathToBannedWords           string
 	TgNegativeChannelInviteLink string
+	TargetChatID                int
+	ForwardChatID               int
 }
 
 type WordConfig struct {
@@ -35,10 +38,27 @@ func LoadConfig() (*Config, error) {
 
 	negativeChatInviteLink := os.Getenv("NEGATIVE_CHAT_INVITE_LINK")
 
+	targetChatIDStr := os.Getenv("TARGET_CHAT_ID")
+	forwardChatIDStr := os.Getenv("FORWARD_CHAT_ID")
+
+	targetChatID, err := strconv.Atoi(targetChatIDStr)
+	if err != nil {
+		log.Printf("Failed to convert TARGET_CHAT_ID to int: %v", err)
+		return nil, err
+	}
+
+	forwardChatID, err := strconv.Atoi(forwardChatIDStr)
+	if err != nil {
+		log.Printf("Failed to convert FORWARD_CHAT_ID to int: %v", err)
+		return nil, err
+	}
+
 	return &Config{
 		TelegramToken:               token,
 		PathToBannedWords:           path,
 		TgNegativeChannelInviteLink: negativeChatInviteLink,
+		TargetChatID:                targetChatID,
+		ForwardChatID:               forwardChatID,
 	}, nil
 }
 
