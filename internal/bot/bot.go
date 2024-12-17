@@ -22,9 +22,6 @@ func StartBot(cfg *config.Config) error {
 		return err
 	}
 
-	targetChatID := int64(cfg.TargetChatID)
-	forwardChatID := int64(cfg.ForwardChatID)
-
 	bot.Debug = false
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
@@ -34,8 +31,8 @@ func StartBot(cfg *config.Config) error {
 	mediaGroupCache := make(map[string]bool)
 
 	for update := range updates {
-		if isMessageGroup(update.Message, mediaGroupCache, targetChatID) {
-			forwardMediaGroup(bot, update.Message, forwardChatID)
+		if isMessageGroup(update.Message, mediaGroupCache, cfg.TargetChatID) {
+			forwardAndDelete(bot, update.Message, cfg.ForwardChatID)
 			continue
 		}
 
@@ -43,7 +40,7 @@ func StartBot(cfg *config.Config) error {
 			continue
 		}
 		if wordFilter(update.Message) {
-			handleNegativeMessage(bot, update.Message, forwardChatID)
+			forwardAndDelete(bot, update.Message, cfg.ForwardChatID)
 			sendNotification(bot, update.Message, mediaGroupCache, cfg.TgNegativeChannelInviteLink)
 		}
 	}
@@ -60,24 +57,13 @@ func isMessageGroup(message *tgbotapi.Message, mediaGroupCache map[string]bool, 
 	return false
 }
 
-func handleNegativeMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, forwardChatID int64) {
-	if err := forwardMessage(bot, message, forwardChatID); err != nil {
-		log.Printf("Failed to forward message with id = %d in media group: %v", message.MessageID, err)
-		return
-	}
-	if err := deleteMessage(bot, message); err != nil {
-		log.Printf("Failed to delete message with id = %d in media group: %v", message.MessageID, err) // Логируем ошибку
-	}
-}
-
-func forwardMediaGroup(bot *tgbotapi.BotAPI, message *tgbotapi.Message, forwardChatID int64) {
+func forwardAndDelete(bot *tgbotapi.BotAPI, message *tgbotapi.Message, forwardChatID int64) {
 	if err := forwardMessage(bot, message, forwardChatID); err != nil {
 		log.Printf("Failed to forward message with id = %d in media group: %v", message.MessageID, err)
 	}
 	if err := deleteMessage(bot, message); err != nil {
 		log.Printf("Failed to delete message with id = %d in media group: %v", message.MessageID, err)
 	}
-
 }
 
 func wordFilter(message *tgbotapi.Message) bool {

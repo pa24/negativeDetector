@@ -12,11 +12,11 @@ type Config struct {
 	TelegramToken               string
 	PathToBannedWords           string
 	TgNegativeChannelInviteLink string
-	TargetChatID                int
-	ForwardChatID               int
+	TargetChatID                int64
+	ForwardChatID               int64
 }
 
-type WordConfig struct {
+type wordConfig struct {
 	BannedWords []string `json:"banned_words"`
 }
 
@@ -26,7 +26,6 @@ func LoadConfig() (*Config, error) {
 	if token == "" {
 		return nil, errors.New("TELEGRAM_BOT_TOKEN is not set")
 	}
-
 	env := os.Getenv("APP_ENV")
 
 	var path string
@@ -37,7 +36,6 @@ func LoadConfig() (*Config, error) {
 	}
 
 	negativeChatInviteLink := os.Getenv("NEGATIVE_CHAT_INVITE_LINK")
-
 	targetChatIDStr := os.Getenv("TARGET_CHAT_ID")
 	forwardChatIDStr := os.Getenv("FORWARD_CHAT_ID")
 
@@ -57,14 +55,12 @@ func LoadConfig() (*Config, error) {
 		TelegramToken:               token,
 		PathToBannedWords:           path,
 		TgNegativeChannelInviteLink: negativeChatInviteLink,
-		TargetChatID:                targetChatID,
-		ForwardChatID:               forwardChatID,
+		TargetChatID:                int64(targetChatID),
+		ForwardChatID:               int64(forwardChatID),
 	}, nil
 }
 
 func LoadBannedWords(filepath string) ([]string, error) {
-	// Проверяем, существует ли файл
-
 	file, err := os.Open(filepath)
 	if err != nil {
 		return nil, err
@@ -75,7 +71,7 @@ func LoadBannedWords(filepath string) ([]string, error) {
 		}
 	}()
 
-	var config WordConfig
+	var config wordConfig
 	if err := json.NewDecoder(file).Decode(&config); err != nil {
 		return nil, err
 	}
