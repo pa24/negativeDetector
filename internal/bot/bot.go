@@ -1,11 +1,10 @@
 package bot
 
 import (
-	"log"
-	"strings"
-
 	"NegativeDetector/internal/config"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 var bannedWords []string
@@ -24,6 +23,9 @@ func StartBot(cfg *config.Config) error {
 
 	bot.Debug = false
 	log.Printf("Authorized on account %s", bot.Self.UserName)
+	log.WithFields(log.Fields{
+		"username": bot.Self.UserName,
+	}).Info("Bot successfully authorized")
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -40,6 +42,13 @@ func StartBot(cfg *config.Config) error {
 			continue
 		}
 		if wordFilter(update.Message) {
+			log.WithFields(log.Fields{
+				"user_id":    update.Message.From.ID,
+				"user_name":  update.Message.From.UserName,
+				"message_id": update.Message.MessageID,
+				"chat_id":    update.Message.Chat.ID,
+			}).Warn("Message contains banned words")
+
 			forwardAndDelete(bot, update.Message, cfg.ForwardChatID)
 			sendNotification(bot, update.Message, mediaGroupCache, cfg.TgNegativeChannelInviteLink)
 		}
@@ -54,6 +63,10 @@ func isMessageGroup(message *tgbotapi.Message, mediaGroupCache map[string]bool, 
 	}
 	if message.MediaGroupID != "" && message.Chat.ID == targetChatID {
 		if mediaGroupCache[message.MediaGroupID] {
+			log.WithFields(log.Fields{
+				"media_group_id": message.MediaGroupID,
+				"chat_id":        message.Chat.ID,
+			}).Debug("Message is part of an existing media group")
 			return true
 		}
 	}
@@ -62,10 +75,19 @@ func isMessageGroup(message *tgbotapi.Message, mediaGroupCache map[string]bool, 
 
 func forwardAndDelete(bot *tgbotapi.BotAPI, message *tgbotapi.Message, forwardChatID int64) {
 	if err := forwardMessage(bot, message, forwardChatID); err != nil {
-		log.Printf("Failed to forward message with id = %d in media group: %v", message.MessageID, err)
+		log.WithFields(log.Fields{
+			"message_id": message.MessageID,
+			"chat_id":    message.Chat.ID,
+			"error":      err,
+		}).Error("Failed to forward message")
+
 	}
 	if err := deleteMessage(bot, message); err != nil {
-		log.Printf("Failed to delete message with id = %d in media group: %v", message.MessageID, err)
+		log.WithFields(log.Fields{
+			"message_id": message.MessageID,
+			"chat_id":    message.Chat.ID,
+			"error":      err,
+		}).Error("Failed to delete message")
 	}
 }
 
@@ -95,6 +117,12 @@ func isMessageValid(update *tgbotapi.Update) bool {
 	if update.Message == nil {
 		return false
 	}
-	return (update.Message.Caption != "" || update.Message.Text != "") &&
+	valid := (update.Message.Caption != "" || update.Message.Text != "") &&
 		(update.Message.ForwardFrom != nil || update.Message.ForwardFromChat != nil)
+	if !valid {
+		log.WithFields(log.Fields{
+			"update": update,
+		}).Debug("Message is invalid or empty")
+	}
+	return valid
 }
