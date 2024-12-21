@@ -1,19 +1,17 @@
 #!/bin/bash
 
-# Pull the latest code from GitHub
+# Прекращаем выполнение скрипта при ошибке
+set -e
 
+# Pull the latest code from GitHub
+echo "Pulling the latest code from GitHub..."
 git pull origin main
 
-# Build the Docker image
-docker build -t negative-detector .
+# Build and deploy using Docker Compose
+echo "Building and deploying services using Docker Compose..."
+docker compose -f docker-compose.yml down          # Останавливаем старые контейнеры
+docker compose -f docker-compose.yml up --build -d # Собираем и запускаем сервисы в фоне
 
-# Stop and remove the old container (if exists)
-docker stop negative-detector || true
-docker rm negative-detector || true
-
-if [ $(docker ps -aq -f name=negative-detector) ]; then
-  docker rm -f negative-detector
-fi
-
-# Run the new container
-sudo docker run -d -p 8080:8080 --name negative-detector --env-file ../.env negative-detector
+# Выводим список работающих контейнеров
+echo "Running containers:"
+docker ps
