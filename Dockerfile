@@ -8,6 +8,7 @@ WORKDIR /app
 COPY . .
 
 # Загружаем зависимости
+COPY go.mod go.sum ./
 RUN go mod tidy
 
 # Сборка приложения
