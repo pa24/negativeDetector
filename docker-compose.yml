@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   bot:
     build:
@@ -9,8 +7,6 @@ services:
     restart: always
     ports:
       - "8080:8080"
-    env_file:
-      - .env
     depends_on:
       - postgres
 
@@ -19,9 +15,9 @@ services:
     container_name: my_postgres
     restart: always
     environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: mydb
+      POSTGRES_USER: andrey
+      POSTGRES_PASSWORD: pass33
+      POSTGRES_DB: message
     ports:
       - "5432:5432"
     volumes:
