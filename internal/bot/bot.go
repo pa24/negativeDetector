@@ -2,6 +2,7 @@ package bot
 
 import (
 	"NegativeDetector/internal/config"
+	"NegativeDetector/internal/database"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -12,6 +13,14 @@ var bannedWords []string
 // StartBot инициализирует и запускает бота
 func StartBot(cfg *config.Config) error {
 	var err error
+
+	// Подключаемся к базе данных
+	db, err := database.NewDatabase(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer db.DB.Close()
+
 	bannedWords, err = config.LoadBannedWords(cfg.PathToBannedWords)
 	if err != nil {
 		return err
