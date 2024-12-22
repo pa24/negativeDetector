@@ -3,6 +3,7 @@ package bot
 import (
 	"NegativeDetector/internal/config"
 	"NegativeDetector/internal/database"
+	"NegativeDetector/internal/database/migrations"
 	"NegativeDetector/internal/handlers"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	log "github.com/sirupsen/logrus"
@@ -21,6 +22,13 @@ func StartBot(cfg *config.Config) error {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer db.Close()
+
+	// Запуск миграций
+	if err := migrations.RunMigrations(db.DB); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+
+	log.Println("Migrations applied successfully")
 
 	bannedWords, err = config.LoadBannedWords(cfg.PathToBannedWords)
 	if err != nil {

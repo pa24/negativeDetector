@@ -9,10 +9,6 @@ import (
 
 // SaveMessageHandler обрабатывает и сохраняет сообщение в базу данных
 func SaveMessageHandler(db *database.Database, message *tgbotapi.Message) {
-	if message == nil {
-		return
-	}
-
 	// Определяем тип контента
 	content := getMessageText(message)
 	contentType := "text"
