@@ -5,7 +5,7 @@ set -e
 
 # Pull the latest code from GitHub
 echo "Pulling the latest code from GitHub..."
-git pull origin main
+git pull origin postgres
 
 # Build and deploy using Docker Compose
 echo "Building and deploying services using Docker Compose..."
