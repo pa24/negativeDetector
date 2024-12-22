@@ -3,7 +3,7 @@ package handlers
 import (
 	"NegativeDetector/internal/database"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5" // Замените на вашу библиотеку для работы с Telegram API
-	"log"
+	log "github.com/sirupsen/logrus"
 	"strings"
 )
 
