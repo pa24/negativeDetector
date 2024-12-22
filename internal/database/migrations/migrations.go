@@ -11,7 +11,7 @@ func RunMigrations(db *sql.DB) error {
 		return err
 	}
 
-	migrationsDir := "./db/migrations"
+	migrationsDir := "./internal/database/migrations"
 	if err := goose.Up(db, migrationsDir); err != nil {
 		return err
 	}
