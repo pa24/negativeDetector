@@ -14,6 +14,7 @@ type Config struct {
 	TgNegativeChannelInviteLink string
 	TargetChatID                int64
 	ForwardChatID               int64
+	DatabaseURL                 string
 }
 
 type wordConfig struct {
@@ -39,6 +40,8 @@ func LoadConfig() (*Config, error) {
 	targetChatIDStr := os.Getenv("TARGET_CHAT_ID")
 	forwardChatIDStr := os.Getenv("FORWARD_CHAT_ID")
 
+	dataBaseURL := os.Getenv("DATABASE_URL")
+
 	targetChatID, err := strconv.Atoi(targetChatIDStr)
 	if err != nil {
 		log.Printf("Failed to convert TARGET_CHAT_ID to int: %v", err)
@@ -57,6 +60,7 @@ func LoadConfig() (*Config, error) {
 		TgNegativeChannelInviteLink: negativeChatInviteLink,
 		TargetChatID:                int64(targetChatID),
 		ForwardChatID:               int64(forwardChatID),
+		DatabaseURL:                 dataBaseURL,
 	}, nil
 }
 
