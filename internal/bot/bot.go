@@ -3,6 +3,7 @@ package bot
 import (
 	"NegativeDetector/internal/config"
 	"NegativeDetector/internal/database"
+	"NegativeDetector/internal/handlers"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -19,7 +20,7 @@ func StartBot(cfg *config.Config) error {
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
-	defer db.DB.Close()
+	defer db.Close()
 
 	bannedWords, err = config.LoadBannedWords(cfg.PathToBannedWords)
 	if err != nil {
@@ -42,6 +43,10 @@ func StartBot(cfg *config.Config) error {
 	mediaGroupCache := make(map[string]bool)
 
 	for update := range updates {
+		if update.Message != nil {
+			handlers.SaveMessageHandler(db, update.Message)
+		}
+
 		if isMessageGroup(update.Message, mediaGroupCache, cfg.TargetChatID) {
 			forwardAndDelete(bot, update.Message, cfg.ForwardChatID)
 			continue
