@@ -11,13 +11,18 @@ import (
 func SaveMessageHandler(db *database.Database, message *tgbotapi.Message) {
 	// Определяем тип контента
 	content := getMessageText(message)
-	contentType := "text"
-	if message.Photo != nil {
+	var contentType string
+	switch {
+	case message.Photo != nil:
 		contentType = "photo"
-	} else if message.Voice != nil {
+	case message.Voice != nil:
 		contentType = "voice"
-	} else if message.Video != nil {
+	case message.Video != nil:
 		contentType = "video"
+	case message.VideoNote != nil:
+		contentType = "video_note"
+	default:
+		contentType = "text"
 	}
 
 	// Сохраняем сообщение в базу данных
