@@ -13,8 +13,6 @@ import (
 
 var bannedWords []string
 
-const chatID = -1002471049006
-
 // StartBot инициализирует и запускает бота
 func StartBot(cfg *config.Config) error {
 	var err error
@@ -61,7 +59,7 @@ func StartBot(cfg *config.Config) error {
 			time.Sleep(time.Until(nextRun))
 
 			// Отправляем статистику
-			if err := SendDailyStats(bot, db, int64(chatID)); err != nil {
+			if err := SendDailyStats(bot, db, cfg.TargetChatID); err != nil {
 				log.Errorf("Failed to send daily stats: %v", err)
 			}
 		}

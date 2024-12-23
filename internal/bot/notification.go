@@ -39,7 +39,7 @@ func SendDailyStats(bot *tgbotapi.BotAPI, db *database.Database, chatID int64) e
 			"🎥 Видеосообщений больше всего отправил: *%s* (%d)\n",
 		stats.TotalMessages,
 		stats.TotalWords,
-		stats.MostActiveUser, stats.MostActiveUserMessages,
+		stats.MostActiveUserID, stats.MostActiveUserMessages,
 		stats.TopVoiceUser, stats.TopVoiceMessages,
 		stats.TopVideoUser, stats.TopVideoMessages,
 	)

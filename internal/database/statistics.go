@@ -11,7 +11,7 @@ import (
 type DailyStats struct {
 	TotalMessages          int
 	TotalWords             int
-	MostActiveUser         string
+	MostActiveUserID       string
 	MostActiveUserMessages int
 	TopVoiceUser           string
 	TopVoiceMessages       int
@@ -39,6 +39,15 @@ func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 
 	var stats DailyStats
 
+	userIDToName := map[string]string{
+		"1633921608": "Вера",
+		"1302900055": "Аня",
+		"927178234":  "Андрей",
+		"1701035449": "Славик",
+		"1705013271": "Гоша",
+		"919183144":  "Коля",
+	}
+
 	// 1. Общее количество сообщений
 	err = db.DB.QueryRow(`
 		SELECT COUNT(*) 
@@ -64,24 +73,36 @@ func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 
 	// 3. Самый активный пользователь по количеству сообщений
 	err = db.DB.QueryRow(`
-		SELECT username, COUNT(*) 
+		SELECT user_id, COUNT(*) 
 		FROM messages
 		WHERE chat_id = $1 AND created_at >= $2 AND created_at < $3
-		GROUP BY username
+		GROUP BY user_id
 		ORDER BY COUNT(*) DESC
 		LIMIT 1`,
 		chatID, startOfDayLocal, endOfDayLocal,
-	).Scan(&stats.MostActiveUser, &stats.MostActiveUserMessages)
+	).Scan(&stats.MostActiveUserID, &stats.MostActiveUserMessages)
 	if err != nil {
-		log.Printf("failed to get most active user: %v", err)
+		if errors.Is(sql.ErrNoRows, err) {
+			stats.MostActiveUserID = ""
+			stats.MostActiveUserMessages = 0
+		} else {
+			log.Printf("failed to get top voice user: %v", err)
+		}
+	}
+
+	mostActiveUserName, ok := userIDToName[stats.MostActiveUserID]
+	if ok {
+		stats.MostActiveUserID = mostActiveUserName
+	} else {
+		stats.MostActiveUserID = "никто" // Если имя пользователя не найдено
 	}
 
 	// 4. Пользователь, отправивший больше всего голосовых сообщений
 	err = db.DB.QueryRow(`
-		SELECT username, COUNT(*)
+		SELECT user_id, COUNT(*)
 		FROM messages
 		WHERE chat_id = $1 AND content_type = 'voice' AND created_at >= $2 AND created_at < $3
-		GROUP BY username
+		GROUP BY user_id
 		ORDER BY COUNT(*) DESC
 		LIMIT 1`,
 		chatID, startOfDayLocal, endOfDayLocal,
@@ -96,12 +117,19 @@ func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 		}
 	}
 
+	topVoiceUserName, ok := userIDToName[stats.TopVoiceUser]
+	if ok {
+		stats.TopVoiceUser = topVoiceUserName
+	} else {
+		stats.TopVoiceUser = "никто" // Если имя пользователя не найдено
+	}
+
 	// 5. Пользователь, отправивший больше всего видео
 	err = db.DB.QueryRow(`
-		SELECT username, COUNT(*)
+		SELECT user_id, COUNT(*)
 		FROM messages
 		WHERE chat_id = $1 AND content_type = 'video_note' AND created_at >= $2 AND created_at < $3
-		GROUP BY username
+		GROUP BY user_id
 		ORDER BY COUNT(*) DESC
 		LIMIT 1`,
 		chatID, startOfDayLocal, endOfDayLocal,
@@ -115,6 +143,12 @@ func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 		} else {
 			log.Printf("failed to get top video user: %v", err)
 		}
+	}
+	topVideoUserName, ok := userIDToName[stats.TopVideoUser]
+	if ok {
+		stats.TopVideoUser = topVideoUserName
+	} else {
+		stats.TopVideoUser = "никто" // Если имя пользователя не найдено
 	}
 
 	return &stats, nil
