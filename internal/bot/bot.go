@@ -47,9 +47,14 @@ func StartBot(cfg *config.Config) error {
 	}).Info("Bot successfully authorized")
 
 	go func() {
+		loc, err := time.LoadLocation("Europe/Moscow") // Замените на ваш часовой пояс
+		if err != nil {
+			log.Fatalf("Failed to load location: %v", err)
+		}
+
 		for {
-			now := time.Now()
-			nextRun := time.Date(now.Year(), now.Month(), now.Day(), 00, 13, 0, 0, now.Location())
+			now := time.Now().In(loc)
+			nextRun := time.Date(now.Year(), now.Month(), now.Day(), 10, 00, 0, 0, loc)
 			if now.After(nextRun) {
 				nextRun = nextRun.Add(24 * time.Hour)
 			}

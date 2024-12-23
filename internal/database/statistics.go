@@ -22,8 +22,11 @@ type DailyStats struct {
 // GetDailyStats получает ежедневную статистику
 func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 	// Определяем текущую дату
-	startOfDayUTC := time.Now().UTC().Truncate(24 * time.Hour)
-	endOfDayUTC := startOfDayUTC.Add(24 * time.Hour)
+	yesterday := time.Now().UTC().AddDate(0, 0, -1).Truncate(24 * time.Hour)
+
+	// Определяем начало и конец вчерашнего дня
+	startOfDayUTC := yesterday
+	endOfDayUTC := yesterday.Add(24 * time.Hour)
 
 	// Преобразуем время из UTC в локальное время (UTC+3)
 	loc, err := time.LoadLocation("Europe/Moscow")
@@ -97,7 +100,7 @@ func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 	err = db.DB.QueryRow(`
 		SELECT username, COUNT(*)
 		FROM messages
-		WHERE chat_id = $1 AND content_type = 'video' AND created_at >= $2 AND created_at < $3
+		WHERE chat_id = $1 AND content_type = 'video_note' AND created_at >= $2 AND created_at < $3
 		GROUP BY username
 		ORDER BY COUNT(*) DESC
 		LIMIT 1`,
