@@ -8,9 +8,12 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	log "github.com/sirupsen/logrus"
 	"strings"
+	"time"
 )
 
 var bannedWords []string
+
+const chatID = -1002471049006
 
 // StartBot инициализирует и запускает бота
 func StartBot(cfg *config.Config) error {
@@ -27,7 +30,6 @@ func StartBot(cfg *config.Config) error {
 	if err := migrations.RunMigrations(db.DB); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
-
 	log.Println("Migrations applied successfully")
 
 	bannedWords, err = config.LoadBannedWords("internal/config/banned_words.json")
@@ -38,16 +40,27 @@ func StartBot(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-
 	bot.Debug = false
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 	log.WithFields(log.Fields{
 		"username": bot.Self.UserName,
 	}).Info("Bot successfully authorized")
 
-	chatID := int64(-1002471049006)
+	go func() {
+		for {
+			now := time.Now()
+			nextRun := time.Date(now.Year(), now.Month(), now.Day(), 00, 13, 0, 0, now.Location())
+			if now.After(nextRun) {
+				nextRun = nextRun.Add(24 * time.Hour)
+			}
+			time.Sleep(time.Until(nextRun))
 
-	SendDailyStats(bot, db, chatID)
+			// Отправляем статистику
+			if err := SendDailyStats(bot, db, int64(chatID)); err != nil {
+				log.Errorf("Failed to send daily stats: %v", err)
+			}
+		}
+	}()
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60

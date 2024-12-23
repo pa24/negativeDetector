@@ -23,11 +23,10 @@ func sendNotification(bot *tgbotapi.BotAPI, message *tgbotapi.Message, mediaGrou
 	}
 }
 
-func SendDailyStats(bot *tgbotapi.BotAPI, db *database.Database, chatID int64) {
+func SendDailyStats(bot *tgbotapi.BotAPI, db *database.Database, chatID int64) error {
 	stats, err := database.GetDailyStats(db, chatID)
 	if err != nil {
-		log.Printf("Failed to get daily stats: %v", err)
-		return
+		return fmt.Errorf("failed to get daily stats: %v", err)
 	}
 
 	// Форматируем сообщение
@@ -52,6 +51,7 @@ func SendDailyStats(bot *tgbotapi.BotAPI, db *database.Database, chatID int64) {
 	// Отправляем сообщение
 	_, err = bot.Send(msg)
 	if err != nil {
-		log.Printf("Failed to send message: %v", err)
+		return fmt.Errorf("failed to send message: %v", err)
 	}
+	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"log"
+	"time"
 )
 
 type Database struct {
@@ -31,9 +32,10 @@ func NewDatabase(dsn string) (*Database, error) {
 func (d *Database) SaveMessage(userID int64, username, contentType, content string, chatID int64) error {
 	query := `
 		INSERT INTO messages (user_id, username, content_type, content, chat_id, created_at)
-		VALUES ($1, $2, $3, $4, $5, NOW())
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
-	_, err := d.DB.Exec(query, userID, username, contentType, content, chatID)
+	now := time.Now().UTC()
+	_, err := d.DB.Exec(query, userID, username, contentType, content, chatID, now)
 	if err != nil {
 		return fmt.Errorf("failed to save message: %w", err)
 	}

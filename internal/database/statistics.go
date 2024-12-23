@@ -22,17 +22,26 @@ type DailyStats struct {
 // GetDailyStats получает ежедневную статистику
 func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 	// Определяем текущую дату
-	startOfDay := time.Now().Truncate(24 * time.Hour)
-	endOfDay := startOfDay.Add(24 * time.Hour)
+	startOfDayUTC := time.Now().UTC().Truncate(24 * time.Hour)
+	endOfDayUTC := startOfDayUTC.Add(24 * time.Hour)
+
+	// Преобразуем время из UTC в локальное время (UTC+3)
+	loc, err := time.LoadLocation("Europe/Moscow")
+	if err != nil {
+		return nil, fmt.Errorf("can't load location %w", err)
+	}
+
+	startOfDayLocal := startOfDayUTC.In(loc)
+	endOfDayLocal := endOfDayUTC.In(loc)
 
 	var stats DailyStats
 
 	// 1. Общее количество сообщений
-	err := db.DB.QueryRow(`
+	err = db.DB.QueryRow(`
 		SELECT COUNT(*) 
 		FROM messages 
 		WHERE chat_id = $1 AND created_at >= $2 AND created_at < $3`,
-		chatID, startOfDay, endOfDay,
+		chatID, startOfDayLocal, endOfDayLocal,
 	).Scan(&stats.TotalMessages)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total messages: %w", err)
@@ -44,7 +53,7 @@ func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 		FROM messages
 		WHERE chat_id = $1 AND content_type = 'text' AND created_at >= $2 AND created_at < $3
 		AND content <> '<empty>'`,
-		chatID, startOfDay, endOfDay,
+		chatID, startOfDayLocal, endOfDayLocal,
 	).Scan(&stats.TotalWords)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total words: %w", err)
@@ -58,7 +67,7 @@ func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 		GROUP BY username
 		ORDER BY COUNT(*) DESC
 		LIMIT 1`,
-		chatID, startOfDay, endOfDay,
+		chatID, startOfDayLocal, endOfDayLocal,
 	).Scan(&stats.MostActiveUser, &stats.MostActiveUserMessages)
 	if err != nil {
 		log.Printf("failed to get most active user: %v", err)
@@ -72,7 +81,7 @@ func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 		GROUP BY username
 		ORDER BY COUNT(*) DESC
 		LIMIT 1`,
-		chatID, startOfDay, endOfDay,
+		chatID, startOfDayLocal, endOfDayLocal,
 	).Scan(&stats.TopVoiceUser, &stats.TopVoiceMessages)
 
 	if err != nil {
@@ -92,7 +101,7 @@ func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 		GROUP BY username
 		ORDER BY COUNT(*) DESC
 		LIMIT 1`,
-		chatID, startOfDay, endOfDay,
+		chatID, startOfDayLocal, endOfDayLocal,
 	).Scan(&stats.TopVideoUser, &stats.TopVideoMessages)
 
 	if err != nil {
