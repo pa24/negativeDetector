@@ -30,7 +30,7 @@ func StartBot(cfg *config.Config) error {
 
 	log.Println("Migrations applied successfully")
 
-	bannedWords, err = config.LoadBannedWords(cfg.PathToBannedWords)
+	bannedWords, err = config.LoadBannedWords("internal/config/banned_words.json")
 	if err != nil {
 		return err
 	}
@@ -44,6 +44,10 @@ func StartBot(cfg *config.Config) error {
 	log.WithFields(log.Fields{
 		"username": bot.Self.UserName,
 	}).Info("Bot successfully authorized")
+
+	chatID := int64(-1002471049006)
+
+	SendDailyStats(bot, db, chatID)
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60

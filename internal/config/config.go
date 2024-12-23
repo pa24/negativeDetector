@@ -10,11 +10,11 @@ import (
 
 type Config struct {
 	TelegramToken               string
-	PathToBannedWords           string
 	TgNegativeChannelInviteLink string
 	TargetChatID                int64
 	ForwardChatID               int64
 	DatabaseURL                 string
+	Enviroment                  string
 }
 
 type wordConfig struct {
@@ -28,13 +28,6 @@ func LoadConfig() (*Config, error) {
 		return nil, errors.New("TELEGRAM_BOT_TOKEN is not set")
 	}
 	env := os.Getenv("APP_ENV")
-
-	var path string
-	if env == "production" {
-		path = "internal/config/banned_words.json"
-	} else {
-		path = "../internal/config/banned_words.json"
-	}
 
 	negativeChatInviteLink := os.Getenv("NEGATIVE_CHAT_INVITE_LINK")
 	targetChatIDStr := os.Getenv("TARGET_CHAT_ID")
@@ -56,11 +49,11 @@ func LoadConfig() (*Config, error) {
 
 	return &Config{
 		TelegramToken:               token,
-		PathToBannedWords:           path,
 		TgNegativeChannelInviteLink: negativeChatInviteLink,
 		TargetChatID:                int64(targetChatID),
 		ForwardChatID:               int64(forwardChatID),
 		DatabaseURL:                 dataBaseURL,
+		Enviroment:                  env,
 	}, nil
 }
 

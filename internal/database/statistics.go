@@ -1,6 +1,8 @@
 package database
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"time"
@@ -40,7 +42,8 @@ func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 	err = db.DB.QueryRow(`
 		SELECT COALESCE(SUM(LENGTH(content) - LENGTH(REPLACE(content, ' ', '')) + 1), 0)
 		FROM messages
-		WHERE chat_id = $1 AND content_type = 'text' AND created_at >= $2 AND created_at < $3`,
+		WHERE chat_id = $1 AND content_type = 'text' AND created_at >= $2 AND created_at < $3
+		AND content <> '<empty>'`,
 		chatID, startOfDay, endOfDay,
 	).Scan(&stats.TotalWords)
 	if err != nil {
@@ -71,8 +74,14 @@ func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 		LIMIT 1`,
 		chatID, startOfDay, endOfDay,
 	).Scan(&stats.TopVoiceUser, &stats.TopVoiceMessages)
+
 	if err != nil {
-		log.Printf("failed to get top voice user: %v", err)
+		if errors.Is(sql.ErrNoRows, err) {
+			stats.TopVoiceUser = ""
+			stats.TopVoiceMessages = 0
+		} else {
+			log.Printf("failed to get top voice user: %v", err)
+		}
 	}
 
 	// 5. Пользователь, отправивший больше всего видео
@@ -85,8 +94,15 @@ func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 		LIMIT 1`,
 		chatID, startOfDay, endOfDay,
 	).Scan(&stats.TopVideoUser, &stats.TopVideoMessages)
+
 	if err != nil {
-		log.Printf("failed to get top video user: %v", err)
+		if errors.Is(sql.ErrNoRows, err) {
+			// Handle case where no rows are returned
+			stats.TopVideoUser = ""
+			stats.TopVideoMessages = 0
+		} else {
+			log.Printf("failed to get top video user: %v", err)
+		}
 	}
 
 	return &stats, nil
