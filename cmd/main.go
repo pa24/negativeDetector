@@ -3,8 +3,13 @@ package main
 import (
 	"NegativeDetector/internal/bot"
 	"NegativeDetector/internal/config"
+	"NegativeDetector/internal/database"
+	"NegativeDetector/internal/database/migrations"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	log "github.com/sirupsen/logrus"
+	"net/http"
 	"os"
+	"strconv"
 )
 
 func main() {
@@ -18,8 +23,58 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
-	// Создание и запуск бота
-	if err = bot.StartBot(cfg); err != nil {
-		log.Fatalf("Error starting bot: %v", err)
+	// Подключаемся к базе данных
+	db, err := database.NewDatabase(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
 	}
+	defer db.Close()
+
+	// Запуск миграций
+	if err := migrations.RunMigrations(db.DB); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+	log.Println("Migrations applied successfully")
+
+	newBotAPI, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
+	if err != nil {
+		log.Fatalf("can't creates a new BotAPI instance: %w", err)
+	}
+	newBotAPI.Debug = false
+	log.Printf("Authorized on account %s", newBotAPI.Self.UserName)
+	log.WithFields(log.Fields{
+		"username": newBotAPI.Self.UserName,
+	}).Info("Bot successfully authorized")
+
+	//Создание и запуск бота
+	if err = bot.StartBot(cfg, db, newBotAPI); err != nil {
+		log.Fatalf("Error starting newBotAPI: %v", err)
+	}
+
+	//создание сервера
+	http.HandleFunc("/send-daily-stats", func(w http.ResponseWriter, r *http.Request) {
+		chatIDStr := r.URL.Query().Get("chat_id")
+		chatID, err := strconv.ParseInt(chatIDStr, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid chat_id", http.StatusBadRequest)
+			return
+		}
+
+		err = bot.SendDailyStats(newBotAPI, db, chatID)
+		if err != nil {
+			log.Errorf("Error sending daily stats: %v", err)
+			http.Error(w, "Failed to send stats", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Stats sent successfully"))
+	})
+
+	log.Info("Starting server on :8080")
+	err = http.ListenAndServe(":8080", nil)
+	if err != nil {
+		return
+	}
+
 }

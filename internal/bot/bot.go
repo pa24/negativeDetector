@@ -3,7 +3,6 @@ package bot
 import (
 	"NegativeDetector/internal/config"
 	"NegativeDetector/internal/database"
-	"NegativeDetector/internal/database/migrations"
 	"NegativeDetector/internal/handlers"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	log "github.com/sirupsen/logrus"
@@ -14,35 +13,12 @@ import (
 var bannedWords []string
 
 // StartBot инициализирует и запускает бота
-func StartBot(cfg *config.Config) error {
+func StartBot(cfg *config.Config, db *database.Database, bot *tgbotapi.BotAPI) error {
 	var err error
-
-	// Подключаемся к базе данных
-	db, err := database.NewDatabase(cfg.DatabaseURL)
-	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
-	}
-	defer db.Close()
-
-	// Запуск миграций
-	if err := migrations.RunMigrations(db.DB); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
-	}
-	log.Println("Migrations applied successfully")
-
 	bannedWords, err = config.LoadBannedWords("internal/config/banned_words.json")
 	if err != nil {
 		return err
 	}
-	bot, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
-	if err != nil {
-		return err
-	}
-	bot.Debug = false
-	log.Printf("Authorized on account %s", bot.Self.UserName)
-	log.WithFields(log.Fields{
-		"username": bot.Self.UserName,
-	}).Info("Bot successfully authorized")
 
 	go func() {
 		loc, err := time.LoadLocation("Europe/Moscow") // Замените на ваш часовой пояс
