@@ -46,35 +46,44 @@ func main() {
 		"username": newBotAPI.Self.UserName,
 	}).Info("Bot successfully authorized")
 
+	log.Println("запуск бота прошел успешно")
+	//создание сервера
+	go func() {
+		http.HandleFunc("/send-daily-stats", func(w http.ResponseWriter, r *http.Request) {
+			log.Println("сервер запускается")
+			chatIDStr := r.URL.Query().Get("chat_id")
+			if chatIDStr == "" {
+				log.Println("chat_id is missing")
+				http.Error(w, "chat_id is required", http.StatusBadRequest)
+				return
+			}
+			chatID, err := strconv.ParseInt(chatIDStr, 10, 64)
+			if err != nil {
+				log.Println("chat_id is missing: ", chatID)
+				http.Error(w, "Invalid chat_id", http.StatusBadRequest)
+				return
+			}
+
+			err = bot.SendDailyStats(newBotAPI, db, chatID)
+			if err != nil {
+				log.Errorf("Error sending daily stats: %v", err)
+				http.Error(w, "Failed to send stats", http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Stats sent successfully"))
+		})
+
+		log.Info("Starting server on :8080")
+		err = http.ListenAndServe(":8080", nil)
+		if err != nil {
+			return
+		}
+	}()
+
 	//Создание и запуск бота
 	if err = bot.StartBot(cfg, db, newBotAPI); err != nil {
 		log.Fatalf("Error starting newBotAPI: %v", err)
 	}
-
-	//создание сервера
-	http.HandleFunc("/send-daily-stats", func(w http.ResponseWriter, r *http.Request) {
-		chatIDStr := r.URL.Query().Get("chat_id")
-		chatID, err := strconv.ParseInt(chatIDStr, 10, 64)
-		if err != nil {
-			http.Error(w, "Invalid chat_id", http.StatusBadRequest)
-			return
-		}
-
-		err = bot.SendDailyStats(newBotAPI, db, chatID)
-		if err != nil {
-			log.Errorf("Error sending daily stats: %v", err)
-			http.Error(w, "Failed to send stats", http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Stats sent successfully"))
-	})
-
-	log.Info("Starting server on :8080")
-	err = http.ListenAndServe(":8080", nil)
-	if err != nil {
-		return
-	}
-
 }
