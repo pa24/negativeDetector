@@ -7,7 +7,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	log "github.com/sirupsen/logrus"
 	"strings"
-	"time"
 )
 
 var bannedWords []string
@@ -19,27 +18,6 @@ func StartBot(cfg *config.Config, db *database.Database, bot *tgbotapi.BotAPI) e
 	if err != nil {
 		return err
 	}
-
-	go func() {
-		loc, err := time.LoadLocation("Europe/Moscow") // Замените на ваш часовой пояс
-		if err != nil {
-			log.Fatalf("Failed to load location: %v", err)
-		}
-
-		for {
-			now := time.Now().In(loc)
-			nextRun := time.Date(now.Year(), now.Month(), now.Day(), 10, 00, 0, 0, loc)
-			if now.After(nextRun) {
-				nextRun = nextRun.Add(24 * time.Hour)
-			}
-			time.Sleep(time.Until(nextRun))
-
-			// Отправляем статистику
-			if err := SendDailyStats(bot, db, cfg.TargetChatID); err != nil {
-				log.Errorf("Failed to send daily stats: %v", err)
-			}
-		}
-	}()
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
