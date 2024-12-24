@@ -2,6 +2,7 @@ package main
 
 import (
 	negativeDetector "NegativeDetector"
+	"NegativeDetector/internal/bot"
 	"NegativeDetector/internal/config"
 	"NegativeDetector/internal/database"
 	"NegativeDetector/internal/database/migrations"
@@ -47,4 +48,9 @@ func main() {
 	log.Println("запуск бота прошел успешно")
 	//создание сервера
 	go negativeDetector.StartServer(botAPI, db)
+
+	//Создание и запуск бота
+	if err = bot.StartBot(cfg, db, botAPI); err != nil {
+		log.Fatalf("Error starting newBotAPI: %v", err)
+	}
 }
