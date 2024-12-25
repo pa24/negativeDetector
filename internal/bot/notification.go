@@ -23,7 +23,7 @@ func sendNotification(bot *tgbotapi.BotAPI, message *tgbotapi.Message, mediaGrou
 	}
 }
 
-func SendDailyStats(bot *tgbotapi.BotAPI, db *database.Database, chatID int64) error {
+func SendDailyStats(bot *tgbotapi.BotAPI, db *database.Database, chatID int64, notifierChatID int64) error {
 	stats, err := database.GetDailyStats(db, chatID)
 	if err != nil {
 		return fmt.Errorf("failed to get daily stats: %v", err)
@@ -45,7 +45,7 @@ func SendDailyStats(bot *tgbotapi.BotAPI, db *database.Database, chatID int64) e
 	)
 
 	// Создаем сообщение для Telegram
-	msg := tgbotapi.NewMessage(chatID, message)
+	msg := tgbotapi.NewMessage(notifierChatID, message)
 	msg.ParseMode = "Markdown"
 
 	// Отправляем сообщение
