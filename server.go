@@ -26,7 +26,20 @@ func StartServer(botAPI *tgbotapi.BotAPI, db *database.Database) {
 			return
 		}
 
-		err = bot.SendDailyStats(botAPI, db, chatID)
+		notifierChatIDstr := r.URL.Query().Get("notifier_to")
+		if notifierChatIDstr == "" {
+			log.Println("notifierChatID is missing")
+			http.Error(w, "notifierChatID is required", http.StatusBadRequest)
+			return
+		}
+		notifierChatID, err := strconv.ParseInt(notifierChatIDstr, 10, 64)
+		if err != nil {
+			log.Printf("Invalid notifierChatID: %v", err)
+			http.Error(w, "Invalid notifierChatID", http.StatusBadRequest)
+			return
+		}
+
+		err = bot.SendDailyStats(botAPI, db, chatID, notifierChatID)
 		if err != nil {
 			log.Errorf("Error sending daily stats: %v", err)
 			http.Error(w, "Failed to send stats", http.StatusInternalServerError)
