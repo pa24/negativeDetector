@@ -34,12 +34,12 @@ func SendDailyStats(bot *tgbotapi.BotAPI, db *database.Database, chatID int64) e
 		"📊 *Ежедневная статистика чата за вчерашний день:*\n\n"+
 			"💬 Всего сообщений было отправлено: *%d*\n"+
 			"📝 Всего слов было напечатано: *%d*\n"+
-			"👑 Самый активный пользователь: *%s* (сообщений: %d)\n"+
+			"👑 Самый активный пользователь: *%s* (%s)\n"+
 			"🎙️ Голосовых сообщений больше всего отправил: *%s* (%d)\n"+
 			"🎥 Видеосообщений больше всего отправил: *%s* (%d)\n",
 		stats.TotalMessages,
 		stats.TotalWords,
-		stats.MostActiveUserID, stats.MostActiveUserMessages,
+		stats.MostActiveUserID, pluralizeMessages(stats.MostActiveUserMessages),
 		stats.TopVoiceUser, stats.TopVoiceMessages,
 		stats.TopVideoUser, stats.TopVideoMessages,
 	)
@@ -54,4 +54,13 @@ func SendDailyStats(bot *tgbotapi.BotAPI, db *database.Database, chatID int64) e
 		return fmt.Errorf("failed to send message: %v", err)
 	}
 	return nil
+}
+
+func pluralizeMessages(num int) string {
+	if num%10 == 1 && num%100 != 11 {
+		return fmt.Sprintf("%d сообщение", num)
+	} else if num%10 >= 2 && num%10 <= 4 && (num%100 < 10 || num%100 >= 20) {
+		return fmt.Sprintf("%d сообщения", num)
+	}
+	return fmt.Sprintf("%d сообщений", num)
 }
