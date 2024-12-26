@@ -153,3 +153,4 @@ func GetDailyStats(db *Database, chatID int64) (*DailyStats, error) {
 
 	return &stats, nil
 }
+	
